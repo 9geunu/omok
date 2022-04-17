@@ -50,27 +50,64 @@ const createMap = (width) => {
     return _map;
 }
 
-const startGame = (currentTurn, turn, map) => {
+const startGame = (currentTurn, turn, map, stoneStack) => {
     currentTurn = turn;
 
     map.forEach(row => {
-        row.forEach(cell => {
-            cell.dom.addEventListener('click', function() {
-                cell.stone = currentTurn;
+        row.forEach(column => {
+            column.dom.addEventListener('click', function() {
+
+                const stone = peek(stoneStack);
+                if (isSamePlace(stone, column)) {
+                    undo(map, stoneStack);
+                    return;
+                }
+
+                if (!isEmptyPlace(column))
+                    return;
+
+                column.stone = currentTurn;
                 if (currentTurn === 'black') {
-                    cell.dom.textContent = '⚫️';
+                    column.dom.textContent = '⚫️';
                     currentTurn = 'white';
                 } else {
-                    cell.dom.textContent = '⚪️';
+                    column.dom.textContent = '⚪️';
                     currentTurn = 'black';
                 }
 
-                if(isGameEnded(cell)) {
+                stoneStack.push(column);
+
+                if(isGameEnded(column)) {
                     endGame();
                 }
             });
         });
     });
+}
+
+function peek(stack) {
+    if (stack.length === 0)
+        return null;
+
+    return stack[stack.length - 1];
+}
+
+function isSamePlace(stone, column) {
+    if (!stone)
+        return false;
+
+    return stone.x === column.x && stone.y === column.y;
+}
+
+function undo(map, stoneStack) {
+    const stone = stoneStack.pop();
+    const column = map[stone.x][stone.y];
+    column.dom.textContent = '➕';
+    column.stone = null;
+}
+
+function isEmptyPlace(column) {
+    return !column.stone
 }
 
 const isGameEnded = (map) => {
@@ -88,10 +125,11 @@ const endGame = () => {
 const main = () => {
     let map = [];
     let currentTurn = null;
+    const stoneStack = [];
 
     initForm(width => {
         map = createMap(width);
-        startGame(currentTurn, 'black', map);
+        startGame(currentTurn, 'black', map, stoneStack);
     });
 };
 
