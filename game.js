@@ -77,7 +77,7 @@ const startGame = (currentTurn, turn, map, stoneStack) => {
 
                 stoneStack.push(column);
 
-                if(isGameEnded(column)) {
+                if(isGameEnded(map, column)) {
                     endGame();
                 }
             });
@@ -110,16 +110,127 @@ function isEmptyPlace(column) {
     return !column.stone
 }
 
-const isGameEnded = (map) => {
-    //가로 검사
-    //세로 검사
-    //대각1 검사
-    //대각2 검사
+const isGameEnded = (map, column) => {
+    return isCurrentRowContainFiveStone(map, column) ||
+        isCurrentColumnContainFiveStone(map, column) ||
+        isFirstDiagonalContainFiveStone(map, column) ||
+        isSecondDiagonalContainFiveStone(map, column);
+};
+
+const isCurrentRowContainFiveStone = (map, column) => {
+    let count = 0;
+    const targetStone = column.stone;
+    let prevStone = '';
+    for (let i = 0; i < map[0].length; i++) {
+        if (prevStone && prevStone === targetStone) {
+            count += 1;
+        }
+
+        if (count === 5)
+            return true;
+
+        if (prevStone !== targetStone) {
+            count = 0;
+        }
+
+        prevStone = map[column.x][i].stone;
+    }
+    return false;
+};
+
+const isCurrentColumnContainFiveStone = (map, column) => {
+    let count = 0;
+    const targetStone = column.stone;
+    let prevStone = '';
+    for (let j = 0; j < map.length; j++) {
+        if (prevStone && prevStone === targetStone) {
+            count += 1;
+        }
+
+        if (count === 5)
+            return true;
+
+        if (prevStone !== targetStone) {
+            count = 0;
+        }
+
+        prevStone = map[j][column.y].stone;
+    }
+    return false;
+};
+
+const isFirstDiagonalContainFiveStone = (map, column) => {
+    let count = 0;
+    const targetStone = column.stone;
+    let prevStone = '';
+    let x = column.x;
+    let y = column.y;
+
+    while (x > 0 && y > 0) {
+        x -= 1;
+        y -= 1;
+    }
+
+    while (x < map.length && y < map[0].length) {
+        if (prevStone && prevStone === targetStone) {
+            count += 1;
+        }
+
+        if (count === 5)
+            return true;
+
+        if (prevStone !== targetStone) {
+            count = 0;
+        }
+
+        prevStone = map[x][y].stone;
+
+        x += 1;
+        y += 1;
+    }
+
+    return false;
+};
+
+const isSecondDiagonalContainFiveStone = (map, column) => {
+    let count = 0;
+    const targetStone = column.stone;
+    let prevStone = '';
+    let x = column.x;
+    let y = column.y;
+
+    while (y < map[0].length - 1 && x > 0) {
+        x -= 1;
+        y += 1;
+    }
+
+    console.log(x, y);
+
+    while (x < map.length && y >= 0) {
+        if (prevStone && prevStone === targetStone) {
+            count += 1;
+        }
+
+        if (count === 5)
+            return true;
+
+        if (prevStone !== targetStone) {
+            count = 0;
+        }
+
+        prevStone = map[x][y].stone;
+
+        x += 1;
+        y -= 1;
+    }
+
     return false;
 };
 
 const endGame = () => {
     // 게임 종료 처리.
+    console.log('game is ended!');
+    location.reload();
 };
 
 const main = () => {
