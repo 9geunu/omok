@@ -23,6 +23,10 @@ const createMap = (width) => {
     const mapDom = document.getElementById('map');
     mapDom.innerHTML = '';
 
+    while (mapDom.firstChild) {
+        mapDom.removeChild(mapDom.lastChild);
+    }
+
     for (let i = 0; i < height; i++) {
         const row = [];
         const rowDom = document.createElement('div');
@@ -230,6 +234,20 @@ const endGame = () => {
     console.log('game is ended!');
 };
 
+const addRestartListener = (map, stoneStack) => {
+    const buttons = document.querySelectorAll('button');
+    for (let i = 0; i < buttons.length; i++) {
+        if (buttons[i].textContent.includes('Restart')) {
+            buttons[i].addEventListener('click', function () {
+                while (peek(stoneStack)) {
+                    undo(map, stoneStack)
+                }
+            });
+            break;
+        }
+    }
+};
+
 const main = () => {
     let map = [];
     let currentTurn = null;
@@ -238,6 +256,7 @@ const main = () => {
     initForm(width => {
         map = createMap(width);
         startGame(currentTurn, 'black', map, stoneStack);
+        addRestartListener(map, stoneStack);
     });
 };
 
