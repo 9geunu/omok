@@ -60,6 +60,7 @@ const startGame = (currentTurn, turn, map, stoneStack) => {
                 const stone = peek(stoneStack);
                 if (isSamePlace(stone, column)) {
                     undo(map, stoneStack);
+                    currentTurn = switchTurn(currentTurn);
                     return;
                 }
 
@@ -76,6 +77,12 @@ const startGame = (currentTurn, turn, map, stoneStack) => {
                 }
 
                 stoneStack.push(column);
+
+                if (is33(stoneStack, column)) {
+                    undo(map, stoneStack);
+                    currentTurn = switchTurn(currentTurn);
+                    return;
+                }
 
                 if(isGameEnded(stoneStack, column)) {
                     endGame();
@@ -106,18 +113,26 @@ function undo(map, stoneStack) {
     column.stone = null;
 }
 
+function switchTurn(currentTurn) {
+    if (currentTurn === 'black') {
+        return 'white';
+    } else {
+        return 'black';
+    }
+}
+
 function isEmptyPlace(column) {
     return !column.stone
 }
 
 const isGameEnded = (stoneStack, column) => {
-    return isThisStoneMakeFiveStonesInRow(stoneStack, column, 5) ||
-        isThisStoneMakeFiveStonesInColumn(stoneStack, column, 5) ||
-        isThisStoneMakeFiveStonesInFirstDiagonal(stoneStack, column, 5) ||
-        isThisStoneMakeFiveStonesInSecondDiagonal(stoneStack, column, 5);
+    return isThisStoneMakeConnectedStonesInRow(stoneStack, column, 5) ||
+        isThisStoneMakeConnectedStonesInColumn(stoneStack, column, 5) ||
+        isThisStoneMakeConnectedStonesInFirstDiagonal(stoneStack, column, 5) ||
+        isThisStoneMakeConnectedStonesInSecondDiagonal(stoneStack, column, 5);
 };
 
-const isThisStoneMakeFiveStonesInRow = (stoneStack, column, n) => {
+const isThisStoneMakeConnectedStonesInRow = (stoneStack, column, n) => {
     return stoneStack.filter(stone =>
         stone.stone === column.stone && stone.x === column.x)
         .map(stone => stone.y)
@@ -137,7 +152,7 @@ const isThisStoneMakeFiveStonesInRow = (stoneStack, column, n) => {
         .length > 0
 }
 
-const isThisStoneMakeFiveStonesInColumn = (stoneStack, column, n) => {
+const isThisStoneMakeConnectedStonesInColumn = (stoneStack, column, n) => {
     return stoneStack.filter(stone =>
         stone.stone === column.stone && stone.y === column.y)
         .map(stone => stone.x)
@@ -157,7 +172,7 @@ const isThisStoneMakeFiveStonesInColumn = (stoneStack, column, n) => {
         .length > 0
 }
 
-const isThisStoneMakeFiveStonesInFirstDiagonal = (stoneStack, column, n) => {
+const isThisStoneMakeConnectedStonesInFirstDiagonal = (stoneStack, column, n) => {
     return stoneStack.filter(stone =>
         stone.stone === column.stone && (stone.y - column.y) === (stone.x - column.x))
         .sort((a, b) => a.x - b.x)
@@ -178,7 +193,7 @@ const isThisStoneMakeFiveStonesInFirstDiagonal = (stoneStack, column, n) => {
         .length > 0
 }
 
-const isThisStoneMakeFiveStonesInSecondDiagonal = (stoneStack, column, n) => {
+const isThisStoneMakeConnectedStonesInSecondDiagonal = (stoneStack, column, n) => {
     return stoneStack.filter(stone =>
         stone.stone === column.stone && (stone.y - column.y) === -(stone.x - column.x))
         .sort((a, b) => a.y - b.y)
@@ -199,9 +214,15 @@ const isThisStoneMakeFiveStonesInSecondDiagonal = (stoneStack, column, n) => {
         .length > 0
 }
 
-const is33 = (map, column) => {
-    //33은 한 수 만에 3이 2줄 나오는 것.
+const is33 = (stoneStack, column) => {
+    const array = [];
+    array.push(isThisStoneMakeConnectedStonesInRow(stoneStack, column, 3))
+    array.push(isThisStoneMakeConnectedStonesInColumn(stoneStack, column, 3))
+    array.push(isThisStoneMakeConnectedStonesInFirstDiagonal(stoneStack, column, 3))
+    array.push(isThisStoneMakeConnectedStonesInSecondDiagonal(stoneStack, column, 3))
 
+    return array.filter(e => e)
+        .length === 2
 }
 
 const endGame = () => {
