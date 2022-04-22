@@ -54,7 +54,7 @@ const createMap = (width) => {
     return _map;
 }
 
-const startGame = (currentTurn, turn, map, stoneStack) => {
+const startGame = (currentTurn, turn, map, stoneStack, startTime, timer) => {
     currentTurn = turn;
 
     map.forEach(row => {
@@ -62,7 +62,7 @@ const startGame = (currentTurn, turn, map, stoneStack) => {
             column.dom.addEventListener('click', function() {
 
                 const stone = peek(stoneStack);
-                if (isSamePlace(stone, column)) {
+                if (isSamePlace(stone, column) && stoneStack.length !== 1) {
                     undo(map, stoneStack);
                     currentTurn = switchTurn(currentTurn);
                     return;
@@ -81,6 +81,11 @@ const startGame = (currentTurn, turn, map, stoneStack) => {
                 }
 
                 stoneStack.push(column);
+
+                if (stoneStack.length === 1) {
+                    startTime = Date.now();
+                    timer.timerId = startTimer(startTime);
+                }
 
                 if (is33(stoneStack, column)) {
                     undo(map, stoneStack);
@@ -126,7 +131,24 @@ function switchTurn(currentTurn) {
 }
 
 function isEmptyPlace(column) {
-    return !column.stone
+    return !column.stone;
+}
+
+function startTimer(startTime) {
+    return setInterval(() => {
+        const endTime = Date.now();
+        const totalSeconds = (endTime - startTime) / 1000;
+
+        const hours = formatTime(Math.floor(totalSeconds / 3600));
+        const minutes = formatTime(Math.floor((totalSeconds % 3600) / 60));
+        const seconds = formatTime(Math.floor((totalSeconds % 3600) % 60));
+        const timeElapsed = document.getElementById('time-elapsed');
+        timeElapsed.textContent = `${hours}:${minutes}:${seconds}`;
+    }, 1000);
+}
+
+function formatTime(time) {
+    return time < 10 ? '0' + time : time;
 }
 
 const isGameEnded = (stoneStack, column) => {
@@ -153,7 +175,7 @@ const isThisStoneMakeConnectedStonesInRow = (stoneStack, column, n) => {
             return array;
         }, [])
         .filter(subArray => subArray.includes(column.y) && subArray.length === n)
-        .length > 0
+        .length > 0;
 }
 
 const isThisStoneMakeConnectedStonesInColumn = (stoneStack, column, n) => {
@@ -173,7 +195,7 @@ const isThisStoneMakeConnectedStonesInColumn = (stoneStack, column, n) => {
             return array;
         }, [])
         .filter(subArray => subArray.includes(column.x) && subArray.length === n)
-        .length > 0
+        .length > 0;
 }
 
 const isThisStoneMakeConnectedStonesInFirstDiagonal = (stoneStack, column, n) => {
@@ -194,7 +216,7 @@ const isThisStoneMakeConnectedStonesInFirstDiagonal = (stoneStack, column, n) =>
             return array;
         }, [])
         .filter(subArray => subArray.includes(column) && subArray.length === n)
-        .length > 0
+        .length > 0;
 }
 
 const isThisStoneMakeConnectedStonesInSecondDiagonal = (stoneStack, column, n) => {
@@ -215,7 +237,7 @@ const isThisStoneMakeConnectedStonesInSecondDiagonal = (stoneStack, column, n) =
             return array;
         }, [])
         .filter(subArray => subArray.includes(column) && subArray.length === n)
-        .length > 0
+        .length > 0;
 }
 
 const is33 = (stoneStack, column) => {
@@ -226,7 +248,7 @@ const is33 = (stoneStack, column) => {
     array.push(isThisStoneMakeConnectedStonesInSecondDiagonal(stoneStack, column, 3))
 
     return array.filter(e => e)
-        .length === 2
+        .length === 2;
 }
 
 const endGame = () => {
@@ -234,29 +256,38 @@ const endGame = () => {
     console.log('game is ended!');
 };
 
-const addRestartListener = (map, stoneStack) => {
+const addRestartListener = (map, stoneStack, timer) => {
     const buttons = document.querySelectorAll('button');
     for (let i = 0; i < buttons.length; i++) {
         if (buttons[i].textContent.includes('Restart')) {
             buttons[i].addEventListener('click', function () {
                 while (peek(stoneStack)) {
-                    undo(map, stoneStack)
+                    undo(map, stoneStack);
                 }
+                endTimer(timer);
             });
             break;
         }
     }
 };
 
+function endTimer(timer) {
+    clearInterval(timer.timerId);
+    const timeElapsed = document.getElementById('time-elapsed');
+    timeElapsed.textContent = '00:00:00';
+}
+
 const main = () => {
     let map = [];
     let currentTurn = null;
     const stoneStack = [];
+    let startTime = null;
+    let timer = { timerId: 0 };
 
     initForm(width => {
         map = createMap(width);
-        startGame(currentTurn, 'black', map, stoneStack);
-        addRestartListener(map, stoneStack);
+        startGame(currentTurn, 'black', map, stoneStack, startTime, timer);
+        addRestartListener(map, stoneStack, timer);
     });
 };
 
