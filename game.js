@@ -1,14 +1,21 @@
-const initForm = (createMapCallback) => {
+const initForm = (createMapCallback, stoneStack) => {
     const formDom = document.getElementById('map-initializer-form');
 
     formDom.addEventListener('submit' , function (e) {
         e.preventDefault();
+
+        //stoneStack 의 length 가 0일 때만 제출 버튼을 클릭할 수 있다.
+        if (stoneStack.length !== 0) {
+            console.log('Cannot submit when game is started!');
+            return;
+        }
+
         const width = formDom.querySelector('[name="width"]').value;
 
         if (isValidWidth(width))
-            createMapCallback(width)
+            createMapCallback(width);
         else
-            alert('The width must be 10 or more and 19 or less!')
+            notice('바둑판의 너비는 10 이상, 19 이하입니다!');
     })
 }
 
@@ -27,6 +34,8 @@ const createMap = (width) => {
         mapDom.removeChild(mapDom.lastChild);
     }
 
+
+
     for (let i = 0; i < height; i++) {
         const row = [];
         const rowDom = document.createElement('div');
@@ -35,7 +44,7 @@ const createMap = (width) => {
         for (let j = 0; j < width; j++) {
             const columnDom = document.createElement('div');
             columnDom.className = 'column';
-            columnDom.textContent = `➕`;
+            columnDom.textContent = ``;
             rowDom.appendChild(columnDom);
 
             const column = {
@@ -59,7 +68,11 @@ const startGame = (currentTurn, turn, map, stoneStack, startTime, timer) => {
 
     map.forEach(row => {
         row.forEach(column => {
-            column.dom.addEventListener('click', function() {
+            column.dom.addEventListener('click', function handler() {
+                if (timer.isGameEnded)
+                    return;
+
+                notice('');
 
                 const stone = peek(stoneStack);
                 if (isSamePlace(stone, column) && stoneStack.length !== 1) {
@@ -84,17 +97,19 @@ const startGame = (currentTurn, turn, map, stoneStack, startTime, timer) => {
 
                 if (stoneStack.length === 1) {
                     startTime = Date.now();
-                    timer.timerId = startTimer(startTime);
+                    startTimer(timer, startTime);
                 }
 
                 if (is33(stoneStack, column)) {
+                    notice('이어지는 3,3을 완성시키는 착수는 금지합니다!');
                     undo(map, stoneStack);
                     currentTurn = switchTurn(currentTurn);
                     return;
                 }
 
                 if(isGameEnded(stoneStack, column)) {
-                    endGame();
+                    endGame(column, timer);
+                    timer.isGameEnded = true;
                 }
             });
         });
@@ -118,7 +133,7 @@ function isSamePlace(stone, column) {
 function undo(map, stoneStack) {
     const stone = stoneStack.pop();
     const column = map[stone.x][stone.y];
-    column.dom.textContent = '➕';
+    column.dom.textContent = '';
     column.stone = null;
 }
 
@@ -134,8 +149,8 @@ function isEmptyPlace(column) {
     return !column.stone;
 }
 
-function startTimer(startTime) {
-    return setInterval(() => {
+function startTimer(timer, startTime) {
+    timer.timerId =  setInterval(() => {
         const endTime = Date.now();
         const totalSeconds = (endTime - startTime) / 1000;
 
@@ -251,10 +266,24 @@ const is33 = (stoneStack, column) => {
         .length === 2;
 }
 
-const endGame = () => {
+const endGame = (column, timer) => {
     // 게임 종료 처리.
-    console.log('game is ended!');
+    notice(`${translateStone(column.stone)}의 승리입니다!`);
+    endTimer(timer, null);
 };
+
+const notice = (text) => {
+    const notice = document.getElementById('notice');
+    notice.textContent = text;
+}
+
+const translateStone = (stone) => {
+    if (stone === 'black') {
+        return '흑';
+    } else {
+        return '백';
+    }
+}
 
 const addRestartListener = (map, stoneStack, timer) => {
     const buttons = document.querySelectorAll('button');
@@ -264,17 +293,22 @@ const addRestartListener = (map, stoneStack, timer) => {
                 while (peek(stoneStack)) {
                     undo(map, stoneStack);
                 }
-                endTimer(timer);
+                endTimer(timer, '00:00:00');
+                notice('');
+                timer.isGameEnded = false;
             });
             break;
         }
     }
 };
 
-function endTimer(timer) {
+function endTimer(timer, timeText) {
     clearInterval(timer.timerId);
     const timeElapsed = document.getElementById('time-elapsed');
-    timeElapsed.textContent = '00:00:00';
+
+    if (timeText) {
+        timeElapsed.textContent = timeText;
+    }
 }
 
 const main = () => {
@@ -282,13 +316,16 @@ const main = () => {
     let currentTurn = null;
     const stoneStack = [];
     let startTime = null;
-    let timer = { timerId: 0 };
+    let timer = { timerId: 0, isGameEnded: false };
 
+    notice('바둑판의 너비를 입력하세요.');
     initForm(width => {
+        notice('');
         map = createMap(width);
         startGame(currentTurn, 'black', map, stoneStack, startTime, timer);
         addRestartListener(map, stoneStack, timer);
-    });
+        //TODO Implement White Black Button
+    }, stoneStack);
 };
 
 main();
