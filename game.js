@@ -77,7 +77,7 @@ const startGame = (currentTurn, turn, map, stoneStack) => {
 
                 stoneStack.push(column);
 
-                if(isGameEnded(map, column)) {
+                if(isGameEnded(stoneStack, column)) {
                     endGame();
                 }
             });
@@ -110,127 +110,103 @@ function isEmptyPlace(column) {
     return !column.stone
 }
 
-const isGameEnded = (map, column) => {
-    return isCurrentRowContainFiveStone(map, column) ||
-        isCurrentColumnContainFiveStone(map, column) ||
-        isFirstDiagonalContainFiveStone(map, column) ||
-        isSecondDiagonalContainFiveStone(map, column);
+const isGameEnded = (stoneStack, column) => {
+    return isThisStoneMakeFiveStonesInRow(stoneStack, column, 5) ||
+        isThisStoneMakeFiveStonesInColumn(stoneStack, column, 5) ||
+        isThisStoneMakeFiveStonesInFirstDiagonal(stoneStack, column, 5) ||
+        isThisStoneMakeFiveStonesInSecondDiagonal(stoneStack, column, 5);
 };
 
-const isCurrentRowContainFiveStone = (map, column) => {
-    let count = 0;
-    const targetStone = column.stone;
-    let prevStone = '';
-    for (let i = 0; i < map[0].length; i++) {
-        if (prevStone && prevStone === targetStone) {
-            count += 1;
-        }
+const isThisStoneMakeFiveStonesInRow = (stoneStack, column, n) => {
+    return stoneStack.filter(stone =>
+        stone.stone === column.stone && stone.x === column.x)
+        .map(stone => stone.y)
+        .sort((a, b) => a - b)
+        .reduce((array, currentValue) => {
+            const lastSubArray = array[array.length - 1];
 
-        if (count === 5)
-            return true;
+            if(!lastSubArray || lastSubArray[lastSubArray.length - 1] !== currentValue - 1) {
+                array.push([]);
+            }
 
-        if (prevStone !== targetStone) {
-            count = 0;
-        }
+            array[array.length - 1].push(currentValue);
 
-        prevStone = map[column.x][i].stone;
-    }
-    return false;
-};
+            return array;
+        }, [])
+        .filter(subArray => subArray.includes(column.y) && subArray.length === n)
+        .length > 0
+}
 
-const isCurrentColumnContainFiveStone = (map, column) => {
-    let count = 0;
-    const targetStone = column.stone;
-    let prevStone = '';
-    for (let j = 0; j < map.length; j++) {
-        if (prevStone && prevStone === targetStone) {
-            count += 1;
-        }
+const isThisStoneMakeFiveStonesInColumn = (stoneStack, column, n) => {
+    return stoneStack.filter(stone =>
+        stone.stone === column.stone && stone.y === column.y)
+        .map(stone => stone.x)
+        .sort((a, b) => a - b)
+        .reduce((array, currentValue) => {
+            const lastSubArray = array[array.length - 1];
 
-        if (count === 5)
-            return true;
+            if(!lastSubArray || lastSubArray[lastSubArray.length - 1] !== currentValue - 1) {
+                array.push([]);
+            }
 
-        if (prevStone !== targetStone) {
-            count = 0;
-        }
+            array[array.length - 1].push(currentValue);
 
-        prevStone = map[j][column.y].stone;
-    }
-    return false;
-};
+            return array;
+        }, [])
+        .filter(subArray => subArray.includes(column.x) && subArray.length === n)
+        .length > 0
+}
 
-const isFirstDiagonalContainFiveStone = (map, column) => {
-    let count = 0;
-    const targetStone = column.stone;
-    let prevStone = '';
-    let x = column.x;
-    let y = column.y;
+const isThisStoneMakeFiveStonesInFirstDiagonal = (stoneStack, column, n) => {
+    return stoneStack.filter(stone =>
+        stone.stone === column.stone && (stone.y - column.y) === (stone.x - column.x))
+        .sort((a, b) => a.x - b.x)
+        .reduce((array, currentStone) => {
+            const lastSubArray = array[array.length - 1];
 
-    while (x > 0 && y > 0) {
-        x -= 1;
-        y -= 1;
-    }
+            if(!lastSubArray || !lastSubArray[lastSubArray.length - 1]
+                || lastSubArray[lastSubArray.length - 1].x !== currentStone.x - 1
+                || lastSubArray[lastSubArray.length - 1].y !== currentStone.y - 1) {
+                array.push([]);
+            }
 
-    while (x < map.length && y < map[0].length) {
-        if (prevStone && prevStone === targetStone) {
-            count += 1;
-        }
+            array[array.length - 1].push(currentStone);
 
-        if (count === 5)
-            return true;
+            return array;
+        }, [])
+        .filter(subArray => subArray.includes(column) && subArray.length === n)
+        .length > 0
+}
 
-        if (prevStone !== targetStone) {
-            count = 0;
-        }
+const isThisStoneMakeFiveStonesInSecondDiagonal = (stoneStack, column, n) => {
+    return stoneStack.filter(stone =>
+        stone.stone === column.stone && (stone.y - column.y) === -(stone.x - column.x))
+        .sort((a, b) => a.y - b.y)
+        .reduce((array, currentStone) => {
+            const lastSubArray = array[array.length - 1];
 
-        prevStone = map[x][y].stone;
+            if(!lastSubArray || !lastSubArray[lastSubArray.length - 1]
+                || lastSubArray[lastSubArray.length - 1].x !== currentStone.x + 1
+                || lastSubArray[lastSubArray.length - 1].y !== currentStone.y - 1) {
+                array.push([]);
+            }
 
-        x += 1;
-        y += 1;
-    }
+            array[array.length - 1].push(currentStone);
 
-    return false;
-};
+            return array;
+        }, [])
+        .filter(subArray => subArray.includes(column) && subArray.length === n)
+        .length > 0
+}
 
-const isSecondDiagonalContainFiveStone = (map, column) => {
-    let count = 0;
-    const targetStone = column.stone;
-    let prevStone = '';
-    let x = column.x;
-    let y = column.y;
+const is33 = (map, column) => {
+    //33은 한 수 만에 3이 2줄 나오는 것.
 
-    while (y < map[0].length - 1 && x > 0) {
-        x -= 1;
-        y += 1;
-    }
-
-    console.log(x, y);
-
-    while (x < map.length && y >= 0) {
-        if (prevStone && prevStone === targetStone) {
-            count += 1;
-        }
-
-        if (count === 5)
-            return true;
-
-        if (prevStone !== targetStone) {
-            count = 0;
-        }
-
-        prevStone = map[x][y].stone;
-
-        x += 1;
-        y -= 1;
-    }
-
-    return false;
-};
+}
 
 const endGame = () => {
     // 게임 종료 처리.
     console.log('game is ended!');
-    location.reload();
 };
 
 const main = () => {
