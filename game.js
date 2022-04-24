@@ -34,8 +34,6 @@ const createMap = (width) => {
         mapDom.removeChild(mapDom.lastChild);
     }
 
-
-
     for (let i = 0; i < height; i++) {
         const row = [];
         const rowDom = document.createElement('div');
@@ -65,6 +63,11 @@ const createMap = (width) => {
 
 const startGame = (currentTurn, turn, map, stoneStack, startTime, timer) => {
     currentTurn = turn;
+
+    addRestartListener(map, stoneStack, timer, () => {
+        currentTurn = 'black';
+        notice('흑의 선공입니다.');
+    });
 
     map.forEach(row => {
         row.forEach(column => {
@@ -268,7 +271,7 @@ const is33 = (stoneStack, column) => {
 
 const endGame = (column, timer) => {
     // 게임 종료 처리.
-    notice(`${translateStone(column.stone)}의 승리입니다!`);
+    notice(`${translateStone(column.stone)}의 승리입니다! 맵 사이즈를 변경하려면 새로고침하세요.`);
     endTimer(timer, null);
 };
 
@@ -285,7 +288,7 @@ const translateStone = (stone) => {
     }
 }
 
-const addRestartListener = (map, stoneStack, timer) => {
+const addRestartListener = (map, stoneStack, timer, restartCallback) => {
     const buttons = document.querySelectorAll('button');
     for (let i = 0; i < buttons.length; i++) {
         if (buttons[i].textContent.includes('Restart')) {
@@ -296,6 +299,7 @@ const addRestartListener = (map, stoneStack, timer) => {
                 endTimer(timer, '00:00:00');
                 notice('');
                 timer.isGameEnded = false;
+                restartCallback();
             });
             break;
         }
@@ -320,11 +324,9 @@ const main = () => {
 
     notice('바둑판의 너비를 입력하세요.');
     initForm(width => {
-        notice('');
         map = createMap(width);
+        notice('흑의 선공입니다.');
         startGame(currentTurn, 'black', map, stoneStack, startTime, timer);
-        addRestartListener(map, stoneStack, timer);
-        //TODO Implement White Black Button
     }, stoneStack);
 };
 
