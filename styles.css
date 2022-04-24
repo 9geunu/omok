@@ -91,4 +91,10 @@ h1 {
 #map .row .column {
     width: 20px;
     height: 20px;
+    padding: 2px;
+    background-color: #fff;
+    background-image:
+            linear-gradient(90deg, transparent 9px, #000 1px, transparent 10px),
+            linear-gradient(transparent 9px, #000 1px, transparent 10px);
+    background-size: 100% 1em;
 }
